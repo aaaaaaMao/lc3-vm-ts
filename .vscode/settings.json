@@ -1,0 +1,17 @@
+{
+    "editor.tabSize": 2,
+    "eslint.alwaysShowStatus": true,
+    "eslint.format.enable": true,
+    "eslint.probe": [
+        "javascript",
+        "javascriptreact",
+        "typescript",
+        "typescriptreact",
+        "html",
+        "vue",
+        "markdown",
+        "json"
+    ],
+    "editor.formatOnSave": true,
+    "files.eol": "\n"
+}
