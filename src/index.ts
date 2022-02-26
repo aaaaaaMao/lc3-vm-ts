@@ -67,6 +67,8 @@ enum Trap {
 const PC_START = 0x3000
 registers[Register.R_PC] = PC_START
 
+const SIGN_BIT = 1 << 15
+
 let running = 1
 
 function main() {
@@ -74,7 +76,8 @@ function main() {
 
   while (running) {
     /* FETCH */
-    const instr: Uint16 = memRead(registers[Register.R_PC]++)
+    const instr: Uint16 = memRead(registers[Register.R_PC])
+    registers[Register.R_PC]++
     const op: Uint16 = instr >> 12
 
     switch (op) {
@@ -146,16 +149,15 @@ function main() {
 main()
 
 function signExtend(x: Uint16, bitCount: number): Uint16 {
-  if ((x >> (bitCount - 1)) & 1) {
-    x |= (0xFFFF << bitCount)
-  }
-  return x
+  const m = 1 << (bitCount - 1)
+  x &= (1 << bitCount) - 1
+  return (x ^ m) - m
 }
 
 function updateFlags(r: Uint16) {
   if (registers[r] === 0) {
     registers[Register.R_COND] = Flag.FL_ZRO
-  } else if (registers[r] >> 15) {
+  } else if (registers[r] & SIGN_BIT) {
     /* a 1 in the left-most bit indicates negative */
     registers[Register.R_COND] = Flag.FL_NEG
   } else {
@@ -289,7 +291,7 @@ function storeRegister(instr: Uint16) {
 }
 
 function putBuf(data: Uint16[]) {
-  console.log(
+  process.stdout.write(
     Buffer.from(data).toString('utf8')
   )
 }
