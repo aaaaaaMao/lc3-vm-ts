@@ -1,28 +1,5 @@
 import { readFileSync } from 'fs'
-import * as readline from 'readline'
-
-const rl = readline.createInterface({ 
-  input: process.stdin, 
-  output: process.stdout
-})
-
-let input = 'a'
-
-async function sleep(milliseconds: number) {
-  return new Promise(resolve => {
-    setTimeout(resolve, milliseconds)
-  })
-}
-
-async function readLine() {
-  return new Promise(resolve => {
-    rl.on('line', (data) => {
-      input = data
-      rl.pause()
-      resolve(data)
-    })
-  })
-}
+import { question } from 'readline-sync'
 
 const MEMORY_SIZE = 65536
 const memory = new Uint16Array(MEMORY_SIZE)
@@ -312,7 +289,7 @@ function trapHandler(instr: Uint16) {
     break
   }
   case Trap.TRAP_OUT: {
-    console.log(Buffer.from([registers[Register.R_R0]]).toString('utf8'))
+    console.log('Trap.TRAP_OUT', Buffer.from([registers[Register.R_R0]]).toString('utf8'))
     break
   }
   case Trap.TRAP_PUTS: {
@@ -325,13 +302,13 @@ function trapHandler(instr: Uint16) {
       pos++
       char = memory[pos]
     }
-    console.log(Buffer.from(buf).toString('utf8'))
+    console.log('Trap.TRAP_PUTS', Buffer.from(buf).toString('utf8'))
     break
   }
   case Trap.TRAP_IN: {
     console.log('Enter a character: ')
     const c = getchar()
-    console.log(c)
+    console.log('Trap.TRAP_IN-----', c)
     registers[Register.R_R0] = c
     break
   }
@@ -359,9 +336,8 @@ function trapHandler(instr: Uint16) {
 }
 
 function getchar(): Uint16 {
-  const char = Buffer.from(input[0]).readUInt8() & 0xFF
-  input = 'a'
-  // rl.resume()
+  const input = question('')
+  const char = Buffer.from(input[0]).readUInt8()
   return char
 }
 
@@ -371,19 +347,15 @@ function memWrite(address: Uint16, val: Uint16) {
 
 async function memRead(address: Uint16): Promise<Uint16> {
   if (address === MMR.MR_KBSR) {
-    if (await checkKey()) {
+    const input = getchar()
+    if (input) {
       memory[MMR.MR_KBSR] = (1 << 15)
-      memory[MMR.MR_KBDR] = getchar()
+      memory[MMR.MR_KBDR] = input
     } else {
       memory[MMR.MR_KBSR] = 0x00
     }
   }
   return memory[address]
-}
-
-async function checkKey(): Promise<boolean> {
-  await Promise.race([sleep(100)])
-  return !!input.length
 }
 
 function readImage(imagePath: string) {
