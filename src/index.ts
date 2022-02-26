@@ -22,21 +22,21 @@ const registers = new Uint16Array(Register.R_COUNT)
 
 enum OpCode {
   OP_BR = 0, /* branch */
-  OP_ADD,    /* add  */
-  OP_LD,     /* load */
-  OP_ST,     /* store */
-  OP_JSR,    /* jump register */
-  OP_AND,    /* bitwise and */
-  OP_LDR,    /* load register */
-  OP_STR,    /* store register */
-  OP_RTI,    /* unused */
-  OP_NOT,    /* bitwise not */
-  OP_LDI,    /* load indirect */
-  OP_STI,    /* store indirect */
-  OP_JMP,    /* jump */
-  OP_RES,    /* reserved (unused) */
-  OP_LEA,    /* load effective address */
-  OP_TRAP    /* execute trap */
+  OP_ADD, /* add  */
+  OP_LD, /* load */
+  OP_ST, /* store */
+  OP_JSR, /* jump register */
+  OP_AND, /* bitwise and */
+  OP_LDR, /* load register */
+  OP_STR, /* store register */
+  OP_RTI, /* unused */
+  OP_NOT, /* bitwise not */
+  OP_LDI, /* load indirect */
+  OP_STI, /* store indirect */
+  OP_JMP, /* jump */
+  OP_RES, /* reserved (unused) */
+  OP_LEA, /* load effective address */
+  OP_TRAP/* execute trap */
 }
 
 enum Flag {
@@ -69,13 +69,14 @@ registers[Register.R_PC] = PC_START
 
 let running = 1
 
-async function main() {
+function main() {
   readImage('./temp/2048.obj')
 
   while (running) {
-    const instr: Uint16 = await memRead(registers[Register.R_PC]++) /* FETCH */
+    /* FETCH */
+    const instr: Uint16 = memRead(registers[Register.R_PC]++)
     const op: Uint16 = instr >> 12
-  
+
     switch (op) {
     case OpCode.OP_ADD: {
       add(instr)
@@ -95,22 +96,22 @@ async function main() {
     }
     case OpCode.OP_JMP: {
       jump(instr)
-      break 
+      break
     }
     case OpCode.OP_JSR: {
       jumpRegister(instr)
       break
     }
     case OpCode.OP_LD: {
-      await load(instr)
+      load(instr)
       break
     }
     case OpCode.OP_LDI: {
-      await loadIndirect(instr)
+      loadIndirect(instr)
       break
     }
     case OpCode.OP_LDR: {
-      await loadRegister(instr)
+      loadRegister(instr)
       break
     }
     case OpCode.OP_LEA: {
@@ -122,7 +123,7 @@ async function main() {
       break
     }
     case OpCode.OP_STI: {
-      await storeIndirect(instr)
+      storeIndirect(instr)
       break
     }
     case OpCode.OP_STR: {
@@ -142,7 +143,7 @@ async function main() {
   }
 }
 
-main().catch(console.error)
+main()
 
 function signExtend(x: Uint16, bitCount: number): Uint16 {
   if ((x >> (bitCount - 1)) & 1) {
@@ -154,7 +155,8 @@ function signExtend(x: Uint16, bitCount: number): Uint16 {
 function updateFlags(r: Uint16) {
   if (registers[r] === 0) {
     registers[Register.R_COND] = Flag.FL_ZRO
-  } else if (registers[r] >> 15) { /* a 1 in the left-most bit indicates negative */
+  } else if (registers[r] >> 15) {
+    /* a 1 in the left-most bit indicates negative */
     registers[Register.R_COND] = Flag.FL_NEG
   } else {
     registers[Register.R_COND] = Flag.FL_POS
@@ -162,9 +164,12 @@ function updateFlags(r: Uint16) {
 }
 
 function add(instr: Uint16) {
-  const r0: Uint16 = (instr >> 9) & 0x7 /* destination register (DR) */
-  const r1: Uint16 = (instr >> 6) & 0x7 /* first operand (SR1) */
-  const immFlag: Uint16 = (instr >> 5) & 0x1 /* whether we are in immediate mode */
+  /* destination register (DR) */
+  const r0: Uint16 = (instr >> 9) & 0x7
+  /* first operand (SR1) */
+  const r1: Uint16 = (instr >> 6) & 0x7
+  /* whether we are in immediate mode */
+  const immFlag: Uint16 = (instr >> 5) & 0x1
 
   if (immFlag) {
     const imm5: Uint16 = signExtend(instr & 0x1F, 5)
@@ -177,12 +182,14 @@ function add(instr: Uint16) {
   updateFlags(r0)
 }
 
-async function loadIndirect(instr: Uint16) {
-  const r0: Uint16 = (instr >> 9) & 0x7 /* destination register (DR) */
-  const pcOffset: Uint16 = signExtend(instr & 0x1ff, 9) /* PCoffset 9*/
+function loadIndirect(instr: Uint16) {
+  /* destination register (DR) */
+  const r0: Uint16 = (instr >> 9) & 0x7
+  /* PCoffset 9*/
+  const pcOffset: Uint16 = signExtend(instr & 0x1ff, 9)
 
   /* add pc_offset to the current PC, look at that memory location to get the final address */
-  registers[r0] = await memRead(await memRead(registers[Register.R_PC] + pcOffset))
+  registers[r0] = memRead(memRead(registers[Register.R_PC] + pcOffset))
   updateFlags(r0)
 }
 
@@ -240,18 +247,18 @@ function jumpRegister(instr: Uint16) {
   }
 }
 
-async function load(instr: Uint16) {
+function load(instr: Uint16) {
   const r0: Uint16 = (instr >> 9) & 0x7
   const pcOffset: Uint16 = signExtend(instr & 0x1ff, 9)
-  registers[r0] = await memRead(registers[Register.R_PC] + pcOffset)
+  registers[r0] = memRead(registers[Register.R_PC] + pcOffset)
   updateFlags(r0)
 }
 
-async function loadRegister(instr: Uint16) {
+function loadRegister(instr: Uint16) {
   const r0: Uint16 = (instr >> 9) & 0x7
   const r1: Uint16 = (instr >> 6) & 0x7
   const offset: Uint16 = signExtend(instr & 0x3F, 6)
-  registers[r0] = await memRead(registers[r1] + offset)
+  registers[r0] = memRead(registers[r1] + offset)
   updateFlags(r0)
 }
 
@@ -268,10 +275,10 @@ function store(instr: Uint16) {
   memWrite(registers[Register.R_PC] + pcOffset, registers[r0])
 }
 
-async function storeIndirect(instr: Uint16) {
+function storeIndirect(instr: Uint16) {
   const r0: Uint16 = (instr >> 9) & 0x7
   const pcOffset: Uint16 = signExtend(instr & 0x1ff, 9)
-  memWrite(await memRead(registers[Register.R_PC] + pcOffset), registers[r0])
+  memWrite(memRead(registers[Register.R_PC] + pcOffset), registers[r0])
 }
 
 function storeRegister(instr: Uint16) {
@@ -281,51 +288,56 @@ function storeRegister(instr: Uint16) {
   memWrite(registers[r1] + offset, registers[r0])
 }
 
+function putBuf(data: Uint16[]) {
+  console.log(
+    Buffer.from(data).toString('utf8')
+  )
+}
+
 function trapHandler(instr: Uint16) {
   switch (instr & 0xFF) {
   case Trap.TRAP_GETC: {
     /* read a single ASCII char */
-    registers[Register.R_R0] = getchar()
+    registers[Register.R_R0] = getChar()
     break
   }
   case Trap.TRAP_OUT: {
-    console.log('Trap.TRAP_OUT', Buffer.from([registers[Register.R_R0]]).toString('utf8'))
+    putBuf([registers[Register.R_R0]])
     break
   }
   case Trap.TRAP_PUTS: {
     /* one char per word */
-    let pos: Uint16 = registers[Register.R_R0]
-    let char = memory[pos]
+    let addr: Uint16 = registers[Register.R_R0]
     const buf = []
-    while (char) {
-      buf.push(char)
-      pos++
-      char = memory[pos]
+    while (memory[addr] !== 0) {
+      buf.push(memory[addr])
+      addr++
     }
-    console.log('Trap.TRAP_PUTS', Buffer.from(buf).toString('utf8'))
+    putBuf(buf)
     break
   }
   case Trap.TRAP_IN: {
     console.log('Enter a character: ')
-    const c = getchar()
-    console.log('Trap.TRAP_IN-----', c)
-    registers[Register.R_R0] = c
+    registers[Register.R_R0] = getChar()
     break
   }
   case Trap.TRAP_PUTSP: {
     /* one char per byte (two bytes per word) here we need to swap back to
        big endian format */
-    let pos: Uint16 = registers[Register.R_R0]
-    let char = memory[pos]
+    let addr: Uint16 = registers[Register.R_R0]
+    const buf = []
 
-    while (char) {
-      const char1 = char & 0xFF
-      console.log(char1)
-      const char2 = char >> 8
-      if (char2) console.log(char2)
-      pos++
-      char = memory[pos]
+    while (memory[addr] !== 0) {
+      const char1 = memory[addr] & 0xFF
+      buf.push(char1)
+
+      const char2 = memory[addr] >> 8
+      if (char2) {
+        buf.push(char2)
+      }
+      addr++
     }
+    putBuf(buf)
     break
   }
   case Trap.TRAP_HALT: {
@@ -335,19 +347,18 @@ function trapHandler(instr: Uint16) {
   }
 }
 
-function getchar(): Uint16 {
-  const input = question('')
-  const char = Buffer.from(input[0]).readUInt8()
-  return char
+function getChar(): Uint16 {
+  const input = question('').trim()
+  return input.charCodeAt(0)
 }
 
 function memWrite(address: Uint16, val: Uint16) {
   memory[address] = val
 }
 
-async function memRead(address: Uint16): Promise<Uint16> {
+function memRead(address: Uint16): Uint16 {
   if (address === MMR.MR_KBSR) {
-    const input = getchar()
+    const input = getChar()
     if (input) {
       memory[MMR.MR_KBSR] = (1 << 15)
       memory[MMR.MR_KBDR] = input
@@ -360,12 +371,9 @@ async function memRead(address: Uint16): Promise<Uint16> {
 
 function readImage(imagePath: string) {
   const image = readFileSync(imagePath)
-
   /* the origin tells us where in memory to place the image */
-  const origin: Uint16 = image.readUInt16BE(0)
 
-  /* we know the maximum file size so we only need one fread */
-  // const maxRead: Uint16 = MEMORY_SIZE - origin
+  const origin: Uint16 = image.readUInt16BE(0)
   let pos = 0
 
   while ((pos + 1) * 2 < image.length) {
