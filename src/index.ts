@@ -1,5 +1,5 @@
 import { readFileSync } from 'fs'
-import { question } from 'readline-sync'
+import { keyIn, keyInYN } from 'readline-sync'
 
 const MEMORY_SIZE = 65536
 const memory = new Uint16Array(MEMORY_SIZE)
@@ -350,7 +350,12 @@ function trapHandler(instr: Uint16) {
 }
 
 function getChar(): Uint16 {
-  const input = question('').trim()
+  const input = keyIn('').trim()
+  if (input.toLowerCase() === 'q') {
+    if (keyInYN('Would you like to quit ?')) {
+      process.exit(0)
+    }
+  }
   return input.charCodeAt(0)
 }
 
