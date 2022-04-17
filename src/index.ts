@@ -352,7 +352,7 @@ function trapHandler(instr: Uint16) {
 function getChar(): Uint16 {
   const input = keyIn('').trim()
   if (input.toLowerCase() === 'q') {
-    if (keyInYN('Would you like to quit ?')) {
+    if (keyInYN('Would you like to quit?')) {
       process.exit(0)
     }
   }

@@ -26,6 +26,10 @@ Are you on an ANSI terminal (y/n)?
 +--------------------------+
 ```
 
+input the `q` to quit vm
+
+---
+
 ref:
 - https://arthurchiao.art/blog/write-your-own-virtual-machine-zh/
 - https://justinmeiners.github.io/lc3-vm/
